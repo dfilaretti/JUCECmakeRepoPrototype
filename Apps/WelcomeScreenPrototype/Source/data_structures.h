@@ -45,7 +45,7 @@ public:
     {
     }
 
-    const String& getTitle() const { return title; }
+    String getTitle() const { return title; }
     Page & operator[](std::size_t idx) { return pages[idx]; }
     const Page & operator[](std::size_t idx) const { return pages[idx]; }
 private:

@@ -31,7 +31,7 @@ class TitleView : public Component
 public:
     explicit TitleView (String & title) : _title { title } {}
 
-    String& getTitle() const { return _title; }
+    String& getTitle() { return _title; }
     void setTitle (String& title) { _title = title; }
 
 private:
@@ -44,7 +44,7 @@ private:
         g.drawText(_title, getLocalBounds(), Justification::centred, true);
     }
 
-    String & _title;
+    String _title;
 };
 
 class PageContentView : public Component
@@ -85,7 +85,7 @@ private:
 class PageView : public Component
 {
 public:
-    PageView (String & title, const PageContent & content)
+    PageView (String title, PageContent content)
         : titleView{ title },
           pageContentView{ content }
     {
