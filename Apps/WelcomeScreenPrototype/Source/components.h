@@ -20,8 +20,7 @@ Tutorial getDummyTutorial()
     Lesson lesson1 {"Things you Should Know", {page1, page2}};
     Lesson lesson2 {"Dummy lesson", {page3}};
 
-    Position pos;
-    Tutorial tut {{lesson1, lesson2}, pos};
+    Tutorial tut {{lesson1, lesson2}};
 
     return tut;
 }
@@ -29,22 +28,37 @@ Tutorial getDummyTutorial()
 class TitleView : public Component
 {
 public:
-    explicit TitleView (String & title) : _title { title } {}
+    explicit TitleView (String & title, Position & pos)
+        : _title { title },
+          _pos {pos}
+    {}
 
-    String& getTitle() { return _title; }
+    String getTitle() { return _title; }
     void setTitle (String& title) { _title = title; }
 
 private:
     void paint (Graphics & g) override
     {
+        auto area = getLocalBounds();
+        auto positionArea = area.removeFromRight(50);
+        auto titleArea = area;
+
         g.fillAll (Colours::pink);
         g.setColour (juce::Colours::darkblue);
-
         g.setFont (32.0f);
-        g.drawText(_title, getLocalBounds(), Justification::centred, true);
+
+        g.drawText(_title, titleArea, Justification::centred, true);
+
+        auto numLessons = _pos.nLessons;
+        auto currentLesson = _pos.lesson + 1;
+        auto positionString = String(currentLesson) + "/" + String(numLessons);
+
+        g.drawText(_title, titleArea, Justification::centred, true);
+        g.drawText(positionString, positionArea, Justification::centred, true);
     }
 
     String _title;
+    Position _pos;
 };
 
 class PageContentView : public Component
@@ -85,8 +99,8 @@ private:
 class PageView : public Component
 {
 public:
-    PageView (String title, PageContent content)
-        : titleView{ title },
+    PageView (String title, PageContent content, Position pos)
+        : titleView{ title, pos },
           pageContentView{ content }
     {
         addAndMakeVisible (titleView);
@@ -156,11 +170,17 @@ public:
     explicit TutorialView(Tutorial tutorial)
         : _tutorial {tutorial},
           pageView (_tutorial[0].getTitle(),
-                    _tutorial[0][0].getContent())
+                    _tutorial[0][0].getContent(),
+                    _tutorial.getPosition())
     {
         addAndMakeVisible (navigationView);
         addAndMakeVisible (pageView);
     }
+
+    // TODO
+    void next() {}
+    void back() {}
+    void skip() {}
 
 private:
     void resized() override

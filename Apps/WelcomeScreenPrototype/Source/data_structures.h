@@ -56,8 +56,20 @@ private:
 struct Position
 {
     Position() = default;
-    Position (int lesson, int page) : lesson{ lesson }, page{ page } {}
 
+    Position (int lesson, int page, unsigned long nLessons)
+        : nLessons { nLessons },
+          lesson{ lesson },
+          page{ page } {}
+
+    explicit Position (std::vector<Lesson> lessons)
+        : nLessons { lessons.size() },
+          lesson {0},
+          page {0}
+    {
+    }
+
+    unsigned long nLessons;
     int lesson = 0;
     int page = 0;
 };
@@ -65,13 +77,14 @@ struct Position
 class Tutorial
 {
 public:
-    Tutorial (const std::vector<Lesson>& lessons,
-              const Position& currentPage)
+    Tutorial (const std::vector<Lesson>& lessons)
         : lessons (lessons),
-          currentPage (currentPage) {}
-    Lesson & operator[](std::size_t idx) { return lessons[idx]; }
-    const Lesson & operator[](std::size_t idx) const { return lessons[idx]; }
+          position (lessons) {}
+    Lesson& operator[] (std::size_t idx) { return lessons[idx]; }
+    const Lesson& operator[] (std::size_t idx) const { return lessons[idx]; }
+    Position getPosition() { return position; }
+
 private:
     std::vector<Lesson> lessons;
-    Position currentPage;
+    Position position;
 };
