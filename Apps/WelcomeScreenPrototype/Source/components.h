@@ -7,38 +7,90 @@
 #include <JuceHeader.h>
 #include "data_structures.h"
 
-class MyComponent : public Component
+Tutorial getDummyTutorial()
 {
-    void paint (Graphics& g) override { g.fillAll (Colours::red); }
+    PageContent pageContent1 {"dummy things you should know...", {"item 1", "item 2", "helloooo"}};
+    PageContent pageContent2 {"MORE things you should know...", {"item 3", "item 4"}};
+    PageContent pageContent3 {"A dummy page", {"item x", "item y", "item z"}};
+
+    Page page1{ pageContent1, []() { return true; } };
+    Page page2{ pageContent2, []() { return true; } };
+    Page page3{ pageContent3, []() { return false; } };
+
+    Lesson lesson1 {"Things you Should Know", {page1, page2}};
+    Lesson lesson2 {"Dummy lesson", {page3}};
+
+    Position pos;
+    Tutorial tut {{lesson1, lesson2}, pos};
+
+    return tut;
+}
+
+class TitleView : public Component
+{
+public:
+    explicit TitleView (String & title) : _title { title } {}
+
+    String& getTitle() const { return _title; }
+    void setTitle (String& title) { _title = title; }
+
+private:
+    void paint (Graphics & g) override
+    {
+        g.fillAll (Colours::pink);
+        g.setColour (juce::Colours::darkblue);
+
+        g.setFont (32.0f);
+        g.drawText(_title, getLocalBounds(), Justification::centred, true);
+    }
+
+    String & _title;
+};
+
+class PageContentView : public Component
+{
+public:
+    explicit PageContentView (PageContent content) : _content{ content } {}
+    const PageContent& getContent() const { return _content; }
+    void setContent (PageContent content) { _content = content; }
+
+private:
+    void paint (Graphics& g) override
+    {
+        auto area = getLocalBounds();
+        auto descriptionArea = area.removeFromTop(40);
+        auto bulletpointsArea = area;
+
+        // set background & text colour
+        g.fillAll (Colours::orange);
+        g.setColour (juce::Colours::darkblue);
+
+        // description
+        g.setFont (24.0f);
+        g.drawText(_content.getDescription(), descriptionArea, Justification::centred, true);
+
+        // bulletpoints
+        g.setFont (18.0f);
+        for (auto & b : _content.getBulletpoints())
+        {
+            auto bArea = bulletpointsArea.removeFromTop(30);
+            g.drawText(b, bArea, Justification::centred, true);
+        }
+    }
+
+    PageContent _content;
+
 };
 
 class PageView : public Component
 {
 public:
-    class TitleView : public Component
+    PageView (String & title, const PageContent & content)
+        : titleView{ title },
+          pageContentView{ content }
     {
-    private:
-        void paint (Graphics& g) override { g.fillAll (Colours::pink); }
-    };
-
-    class PageContentView : public Component
-    {
-    public:
-//        explicit PageContentView (const PageContent& content) : content{ content }
-//        {
-//
-//        }
-
-    private:
-        void paint (Graphics& g) override { g.fillAll (Colours::orange); }
-
-        //const PageContent& content;
-    };
-
-    PageView()
-    {
-        addAndMakeVisible(title);
-        addAndMakeVisible(content);
+        addAndMakeVisible (titleView);
+        addAndMakeVisible (pageContentView);
     }
 
 private:
@@ -47,13 +99,13 @@ private:
     void resized() override
     {
         auto area = getLocalBounds();
-        const auto titleArea = area.removeFromTop(35);
-        title.setBounds(titleArea);
-        content.setBounds(area);
+        const auto titleArea = area.removeFromTop (50);
+        titleView.setBounds (titleArea);
+        pageContentView.setBounds (area);
     }
 
-    TitleView title;
-    PageContentView content;
+    TitleView titleView;
+    PageContentView pageContentView;
 };
 
 class NavigationView : public Component
@@ -101,35 +153,43 @@ private:
 class TutorialView : public Component
 {
 public:
-    TutorialView()
+    explicit TutorialView(Tutorial tutorial)
+        : _tutorial {tutorial},
+          pageView (_tutorial[0].getTitle(),
+                    _tutorial[0][0].getContent())
     {
-        addAndMakeVisible (navigation);
-        addAndMakeVisible (page);
+        addAndMakeVisible (navigationView);
+        addAndMakeVisible (pageView);
     }
 
+private:
     void resized() override
     {
         auto area = getLocalBounds();
         const auto navigationArea = area.removeFromBottom (50);
-        navigation.setBounds (navigationArea);
-        page.setBounds (area);
+        navigationView.setBounds (navigationArea);
+        pageView.setBounds (area);
     }
 
-private:
-    Tutorial tutorial; // TODO: init
-    NavigationView navigation;
-    PageView page;
+    // data
+    Tutorial _tutorial;
+
+    // children
+    NavigationView navigationView;
+    PageView pageView;
 };
 
 class Wrapper : public TopLevelWindow
 {
 public:
-    Wrapper() : TopLevelWindow ("Test", true)
+    Wrapper()
+        : TopLevelWindow ("Test", true),
+          _tutorialView (getDummyTutorial())
     {
         setOpaque (false);
         Component::setVisible (true);
         centreWithSize (500, 500);
-        addAndMakeVisible (content);
+        addAndMakeVisible (_tutorialView);
         setAlwaysOnTop (true);
     }
 
@@ -137,9 +197,9 @@ public:
     {
         TopLevelWindow::resized();
         auto area = getLocalBounds();
-        content.setBounds (area);
+        _tutorialView.setBounds (area);
     }
 
 private:
-    TutorialView content;
+    TutorialView _tutorialView;
 };
