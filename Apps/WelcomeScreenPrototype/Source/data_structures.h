@@ -30,6 +30,7 @@ public:
         : content (content),
           isCompleted (isCompleted) {}
     const PageContent& getContent() const { return content; }
+    const std::function<bool()>& getCondition() const { return isCompleted; }
 private:
     PageContent content;
     std::function<bool()> isCompleted; // TODO: function should take SystemContext
@@ -46,6 +47,7 @@ public:
     }
 
     String getTitle() const { return title; }
+    int numberOfPages() const { return pages.size(); }
     Page & operator[](std::size_t idx) { return pages[idx]; }
     const Page & operator[](std::size_t idx) const { return pages[idx]; }
 private:
@@ -55,21 +57,20 @@ private:
 
 struct Position
 {
-    Position() = default;
-
-    Position (int lesson, int page, unsigned long nLessons)
-        : nLessons { nLessons },
-          lesson{ lesson },
-          page{ page } {}
-
-    explicit Position (std::vector<Lesson> lessons)
-        : nLessons { lessons.size() },
-          lesson {0},
-          page {0}
+    explicit Position (const std::vector<Lesson>& lessons)
+        : nlessons (lessons.size())
     {
+        jassert (!lessons.empty());
     }
 
-    unsigned long nLessons;
+    void setNextPage() { page++; }
+    void setPreviousPage() { page--; }
+    void setNextLesson() { lesson++; }
+    void setPreviousLesson() { lesson--; }
+    void setFirstPage() { page = 0; }
+    void setPage (int newPage) { page = newPage; }
+
+    int nlessons = 0;
     int lesson = 0;
     int page = 0;
 };
@@ -77,12 +78,17 @@ struct Position
 class Tutorial
 {
 public:
-    Tutorial (const std::vector<Lesson>& lessons)
+    explicit Tutorial (const std::vector<Lesson>& lessons)
         : lessons (lessons),
           position (lessons) {}
+
     Lesson& operator[] (std::size_t idx) { return lessons[idx]; }
     const Lesson& operator[] (std::size_t idx) const { return lessons[idx]; }
-    Position getPosition() { return position; }
+
+    Position & getPosition() { return position; }
+    //void setPosition (Position newPosition) { position = newPosition; }
+
+    int numberOfLessons() { return lessons.size(); }
 
 private:
     std::vector<Lesson> lessons;
