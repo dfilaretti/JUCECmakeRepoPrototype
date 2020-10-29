@@ -5,7 +5,6 @@
 #pragma once
 
 #include <JuceHeader.h>
-
 #include <utility>
 #include "data_structures.h"
 
@@ -50,14 +49,6 @@ public:
         repaint();
     }
 
-    Position * getPosition() { return _pos; }
-
-//    void setPosition (Position & newPosition)
-//    {
-//        _pos = newPosition;
-//        repaint();
-//    }
-
 private:
     void paint (Graphics & g) override
     {
@@ -87,8 +78,6 @@ class PageContentView : public Component
 {
 public:
     explicit PageContentView (PageContent content) : _content{std::move( content )} {}
-
-    const PageContent& getContent() const { return _content; }
 
     void setContent (PageContent content)
     {
@@ -135,11 +124,11 @@ public:
     }
 
     void setTitle (const String& newTitle) { titleView.setTitle (newTitle); }
-    //void setPosition (Position& newPosition) { titleView.setPosition (newPosition); }
     void setContent (const PageContent& newContent) { pageContentView.setContent (newContent); }
 
 private:
     void paint (Graphics& g) override { g.fillAll (Colours::green); }
+
     void resized() override
     {
         auto area = getLocalBounds();
@@ -155,10 +144,8 @@ private:
 class TutorialView : public Component
 {
 public:
-
     class NavigationView : public Component
     {
-
     public:
         explicit NavigationView (TutorialView & owner)
             : _owner (owner)
@@ -207,19 +194,18 @@ public:
     };
 
     explicit TutorialView(Tutorial tutorial)
-        : _tutorial {std::move(tutorial)},
-          navigationView (* this),
-          pageView (getCurrentTitle(),
+        : _tutorial {std::move(tutorial)}, _navigationView (* this),
+          _pageView (getCurrentTitle(),
                     currentPageContent(),
                     &currentPosition())
     {
-        addAndMakeVisible (navigationView);
-        addAndMakeVisible (pageView);
+        addAndMakeVisible (_navigationView);
+        addAndMakeVisible (_pageView);
     }
 
-    void setTitle (const String& newTitle) { pageView.setTitle (newTitle); }
+    void setTitle (const String& newTitle) { _pageView.setTitle (newTitle); }
 //    void setPosition (Position& newPosition) { pageView.setPosition (newPosition); }
-    void setContent (const PageContent& newContent) { pageView.setContent (newContent); }
+    void setContent (const PageContent& newContent) { _pageView.setContent (newContent); }
 
     void next()
     {
@@ -288,8 +274,8 @@ private:
     {
         auto area = getLocalBounds();
         const auto navigationArea = area.removeFromBottom (50);
-        navigationView.setBounds (navigationArea);
-        pageView.setBounds (area);
+        _navigationView.setBounds (navigationArea);
+        _pageView.setBounds (area);
     }
 
     // getters
@@ -305,8 +291,8 @@ private:
     int nLessons() { return _tutorial.numberOfLessons(); }
 
     Tutorial _tutorial;
-    NavigationView navigationView;
-    PageView pageView;
+    NavigationView _navigationView;
+    PageView _pageView;
 };
 
 class Wrapper : public TopLevelWindow
