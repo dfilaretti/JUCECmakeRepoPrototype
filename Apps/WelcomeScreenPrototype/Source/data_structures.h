@@ -86,7 +86,6 @@ public:
     const Lesson& operator[] (std::size_t idx) const { return lessons[idx]; }
 
     Position & getPosition() { return position; }
-    //void setPosition (Position newPosition) { position = newPosition; }
 
     int numberOfLessons() { return lessons.size(); }
 

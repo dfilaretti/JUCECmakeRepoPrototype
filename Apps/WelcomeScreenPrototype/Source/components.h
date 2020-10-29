@@ -38,7 +38,7 @@ Tutorial getEmptyTutorial()
 class TitleView : public Component
 {
 public:
-    explicit TitleView (String & title, Position & pos)
+    explicit TitleView (String & title, Position * pos)
         : _title{ title },
           _pos{ pos } {}
 
@@ -50,13 +50,13 @@ public:
         repaint();
     }
 
-    Position getPosition() { return _pos; }
+    Position * getPosition() { return _pos; }
 
-    void setPosition (const Position& newPosition)
-    {
-        _pos = newPosition;
-        repaint();
-    }
+//    void setPosition (Position & newPosition)
+//    {
+//        _pos = newPosition;
+//        repaint();
+//    }
 
 private:
     void paint (Graphics & g) override
@@ -71,8 +71,8 @@ private:
 
         g.drawText(_title, titleArea, Justification::centred, true);
 
-        auto numLessons = _pos.nlessons;
-        auto currentLesson = _pos.lesson + 1;
+        auto numLessons = _pos->nlessons;
+        auto currentLesson = _pos->lesson + 1;
         auto positionString = String(currentLesson) + "/" + String(numLessons);
 
         g.drawText(_title, titleArea, Justification::centred, true);
@@ -80,7 +80,7 @@ private:
     }
 
     String _title;
-    Position & _pos;
+    Position * _pos;
 };
 
 class PageContentView : public Component
@@ -126,7 +126,7 @@ private:
 class PageView : public Component
 {
 public:
-    PageView (String title, PageContent content, Position pos)
+    PageView (String title, PageContent content, Position* pos)
         : titleView{ title, pos },
           pageContentView{ std::move(content) }
     {
@@ -135,7 +135,7 @@ public:
     }
 
     void setTitle (const String& newTitle) { titleView.setTitle (newTitle); }
-    void setPosition (const Position& newPosition) { titleView.setPosition (newPosition); }
+    //void setPosition (Position& newPosition) { titleView.setPosition (newPosition); }
     void setContent (const PageContent& newContent) { pageContentView.setContent (newContent); }
 
 private:
@@ -211,14 +211,14 @@ public:
           navigationView (* this),
           pageView (getCurrentTitle(),
                     currentPageContent(),
-                    currentPosition())
+                    &currentPosition())
     {
         addAndMakeVisible (navigationView);
         addAndMakeVisible (pageView);
     }
 
     void setTitle (const String& newTitle) { pageView.setTitle (newTitle); }
-    void setPosition (const Position& newPosition) { pageView.setPosition (newPosition); }
+//    void setPosition (Position& newPosition) { pageView.setPosition (newPosition); }
     void setContent (const PageContent& newContent) { pageView.setContent (newContent); }
 
     void next()
@@ -229,87 +229,58 @@ public:
         auto maxLesson = nLessons() - 1;
 
         if (currentPage < maxPage)
-        {
-            DBG ("NEXT: moving to next page in lesson");
-//            setPosition_ (currentPosition().withNextPage());
             currentPosition().setNextPage();
-        }
         else
-        {
             if (currentLesson < maxLesson)
             {
-                DBG ("NEXT: reached end of lesson - moving to next one");
-//                setPosition_ (currentPosition().withNextLesson().withFirstPage());
                 currentPosition().setNextLesson();
                 currentPosition().setFirstPage();
             }
             else
-            {
                 DBG ("NEXT: reached end of last lesson");
-            }
-        }
 
         refreshContent();
     }
 
     void back()
     {
-        DBG ("BACK!");
-
         auto currentLesson = currentLessonNumber();
         auto currentPage = currentPageNumber();
 
         if (currentPage > 0)
-        {
-            DBG ("BACK: moving to previous page in lesson");
-//            setPosition_ (currentPosition().withPreviousPage());
             currentPosition().setPreviousPage();
-        }
         else
-        {
             if (currentLesson > 0)
             {
-                DBG ("NEXT: reached beginning of lesson - moving to previous one");
-//                setPosition_ (currentPosition().withPreviousLesson().withLastPage())
                 currentPosition().setPreviousLesson();
                 currentPosition().setPage(nPagesInCurrentLesson() - 1);
             }
             else
-            {
                 DBG ("NEXT: reached beginning of first lesson");
-            }
-        }
 
         refreshContent();
-
     }
 
     void skip()
     {
-        DBG ("SKIP");
-
         auto currentLesson = currentLessonNumber();
         auto maxLesson = nLessons() - 1;
 
         if (currentLesson < maxLesson)
         {
-            DBG ("SKIP: jumping to next lesson");
             currentPosition().setNextLesson();
             currentPosition().setFirstPage();
         }
         else
-        {
             DBG ("SKIP: already in last lesson!!");
-        }
 
         refreshContent();
     }
 
     void refreshContent()
     {
-        setTitle(getCurrentTitle());
-        setPosition(currentPosition());
-        setContent(currentPageContent());
+        setTitle (getCurrentTitle());
+        setContent (currentPageContent());
     }
 
 private:
@@ -333,12 +304,7 @@ private:
     int nPagesInCurrentLesson() { return nPagesInLesson (currentLessonNumber()); }
     int nLessons() { return _tutorial.numberOfLessons(); }
 
-    // setters
-    //void setPosition_ (Position newPosition) {_tutorial.setPosition (newPosition); }
-
-    // data
     Tutorial _tutorial;
-    // children
     NavigationView navigationView;
     PageView pageView;
 };
