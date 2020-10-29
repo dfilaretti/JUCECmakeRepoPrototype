@@ -70,7 +70,7 @@ struct Position
     void setFirstPage() { page = 0; }
     void setPage (int newPage) { page = newPage; }
 
-    int nlessons = 0;
+    const unsigned long nlessons = 0;
     int lesson = 0;
     int page = 0;
 };
@@ -92,4 +92,22 @@ public:
 private:
     std::vector<Lesson> lessons;
     Position position;
+};
+
+struct Context
+{
+    bool x = false;
+    bool y = false;
+    bool z = false;
+
+    String toString() const
+    {
+        return String ("[ x: ") +
+               std::to_string (x) +
+               String(",y: ") +
+               std::to_string (y) +
+               String(",z: ") +
+               std::to_string (z) +
+               String ("]");
+    }
 };

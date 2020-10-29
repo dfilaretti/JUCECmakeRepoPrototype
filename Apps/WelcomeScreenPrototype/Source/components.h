@@ -141,6 +141,61 @@ private:
     PageContentView pageContentView;
 };
 
+class ContextView : public Component
+{
+public:
+    explicit ContextView (Context & context) : context (context)
+    {
+        addAndMakeVisible (xToggleButton);
+        addAndMakeVisible (yToggleButton);
+        addAndMakeVisible (zToggleButton);
+
+        xToggleButton.onClick = [this]()
+        {
+            this->context.x = xToggleButton.getToggleState();
+            DBG (this->context.toString());
+        };
+
+        yToggleButton.onClick = [this]()
+        {
+          this->context.y = yToggleButton.getToggleState();
+          DBG (this->context.toString());
+        };
+
+        zToggleButton.onClick = [this]()
+        {
+          this->context.z = zToggleButton.getToggleState();
+          DBG (this->context.toString());
+        };
+    }
+private:
+
+    void paint (Graphics & g) override
+    {
+        g.fillAll (Colours::black);
+    }
+
+    void resized() override
+    {
+        auto area = getLocalBounds();
+
+        auto xArea = area.removeFromTop(50);
+        xToggleButton.setBounds(xArea);
+
+        auto yArea = area.removeFromTop(50);
+        yToggleButton.setBounds(yArea);
+
+        auto zArea = area.removeFromTop(50);
+        zToggleButton.setBounds(zArea);
+    }
+
+    Context & context;
+
+    ToggleButton xToggleButton{ "x" };
+    ToggleButton yToggleButton{ "y" };
+    ToggleButton zToggleButton{ "z" };
+};
+
 class TutorialView : public Component
 {
 public:
@@ -304,7 +359,8 @@ public:
     {
         setOpaque (false);
         Component::setVisible (true);
-        centreWithSize (500, 500);
+        centreWithSize (600, 500);
+        addAndMakeVisible (_contextView);
         addAndMakeVisible (_tutorialView);
         setAlwaysOnTop (true);
     }
@@ -313,9 +369,13 @@ public:
     {
         TopLevelWindow::resized();
         auto area = getLocalBounds();
+        auto contextArea = area.removeFromRight(100);
+        _contextView.setBounds (contextArea);
         _tutorialView.setBounds (area);
     }
 
 private:
+    Context _context;
+    ContextView _contextView{ _context };
     TutorialView _tutorialView;
 };
