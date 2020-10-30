@@ -124,6 +124,7 @@ public:
     }
 
     void setTitle (const String& newTitle) { titleView.setTitle (newTitle); }
+
     void setContent (const PageContent& newContent) { pageContentView.setContent (newContent); }
 
 private:
@@ -150,30 +151,12 @@ public:
         addAndMakeVisible (yToggleButton);
         addAndMakeVisible (zToggleButton);
 
-        xToggleButton.onClick = [this]()
-        {
-            this->context.x = xToggleButton.getToggleState();
-            DBG (this->context.toString());
-        };
-
-        yToggleButton.onClick = [this]()
-        {
-          this->context.y = yToggleButton.getToggleState();
-          DBG (this->context.toString());
-        };
-
-        zToggleButton.onClick = [this]()
-        {
-          this->context.z = zToggleButton.getToggleState();
-          DBG (this->context.toString());
-        };
+        xToggleButton.onClick = [this]() { this->context.x = xToggleButton.getToggleState(); };
+        yToggleButton.onClick = [this]() { this->context.y = yToggleButton.getToggleState(); };
+        zToggleButton.onClick = [this]() { this->context.z = zToggleButton.getToggleState(); };
     }
 private:
-
-    void paint (Graphics & g) override
-    {
-        g.fillAll (Colours::black);
-    }
+    void paint (Graphics& g) override { g.fillAll (Colours::black); }
 
     void resized() override
     {
@@ -202,8 +185,7 @@ public:
     class NavigationView : public Component, public Timer
     {
     public:
-        explicit NavigationView (TutorialView & owner)
-            : _owner (owner)
+        explicit NavigationView (TutorialView & owner) : _owner (owner)
         {
             addAndMakeVisible (back);
             addAndMakeVisible (next);
@@ -259,7 +241,7 @@ public:
             refreshIsNextAllowed();
         }
 
-        void paint (Graphics& g) override { g.fillAll (Colours::yellow); }
+        void paint (Graphics& g) override { g.fillAll (Colours::white); }
 
         void resized() override
         {
@@ -292,13 +274,11 @@ public:
         TutorialView & _owner;
     };
 
-    explicit TutorialView(Tutorial tutorial, Context & context)
+    explicit TutorialView (Tutorial tutorial, Context & context)
         : _context (context),
           _tutorial {std::move(tutorial)},
-          _navigationView (* this),
-          _pageView (getCurrentTitle(),
-                    currentPageContent(),
-                    &currentPosition())
+          _navigationView (*this),
+          _pageView (getCurrentTitle(), currentPageContent(), &currentPosition())
     {
         addAndMakeVisible (_navigationView);
         addAndMakeVisible (_pageView);
@@ -306,6 +286,7 @@ public:
 
     void setTitle (const String& newTitle) { _pageView.setTitle (newTitle); }
     void setContent (const PageContent& newContent) { _pageView.setContent (newContent); }
+    void refreshNavigation() { _navigationView.updateNavigationState(); }
 
     void next()
     {
@@ -367,18 +348,12 @@ public:
     {
         setTitle (getCurrentTitle());
         setContent (currentPageContent());
-        _navigationView.updateNavigationState();
+        refreshNavigation();
     }
 
     bool isAtFirstPage() { return currentLessonNumber() == 0 && currentPageNumber() == 0; }
-    bool isAtLastPage()
-    {
-        return currentLessonNumber() == nLessons() - 1 &&
-               currentPageNumber() == nPagesInCurrentLesson() - 1;
-    }
-
+    bool isAtLastPage() { return currentLessonNumber() == nLessons() - 1 && currentPageNumber() == nPagesInCurrentLesson() - 1; }
     std::function<bool(Context)> currentCondition() { return currentPage().getCondition(); }
-
     Context& getContext() { return _context; }
 
 private:
@@ -403,6 +378,7 @@ private:
 
     Context & _context;
     Tutorial _tutorial;
+
     NavigationView _navigationView;
     PageView _pageView;
 };
@@ -424,7 +400,7 @@ public:
     {
         TopLevelWindow::resized();
         auto area = getLocalBounds();
-        auto contextArea = area.removeFromRight(100);
+        auto contextArea = area.removeFromRight (100);
         _contextView.setBounds (contextArea);
         _tutorialView.setBounds (area);
     }
