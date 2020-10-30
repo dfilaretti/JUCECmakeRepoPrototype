@@ -10,19 +10,19 @@
 
 Tutorial getDummyTutorial()
 {
-    PageContent pageContent1 {"dummy things you should know...", {"item 1", "item 2", "helloooo"}};
-    PageContent pageContent2 {"MORE things you should know...", {"item 3", "item 4"}};
-    PageContent pageContent3 {"A dummy page", {"item x", "item y", "item z"}};
+    PageContent pageContent1 {"This is a sample page. Read the following items then click next...", {"item 1", "item 2", "item 3", "..."}};
+    PageContent pageContent2 {"You need to take action now!", {"select x", "select z", "... then you can click next (or skip!)"}};
+    PageContent pageContent3 {"A dummy page with some action needed", {"y needs to be active!!", "blah blah blah"}};
     PageContent pageContent4 {"Hello World Page", {"foo", "bar", "baz", "wux"}};
 
     Page page1{ pageContent1, [](Context c) { return true; } };
     Page page2{ pageContent2, [](Context c) { return c.x && c.z; } };
-    Page page3{ pageContent3, [](Context c) { return c.x; } };
+    Page page3{ pageContent3, [](Context c) { return c.y; } };
     Page page4{ pageContent4, [](Context c) { return true; } };
 
-    Lesson lesson1 {"Things you Should Know", {page1, page2, page4}};
-    Lesson lesson2 {"Dummy lesson", {page3}};
-    Lesson lesson3 {"THE FINAL LESSON", {page3, page2, page1, page4}};
+    Lesson lesson1 {"First lesson", { page1, page2, page4 }};
+    Lesson lesson2 {"Second lesson", { page3 }};
+    Lesson lesson3 {"THE FINAL LESSON", { page2, page1, page4 }};
 
     Tutorial tut {{lesson1, lesson2, lesson3}};
 
