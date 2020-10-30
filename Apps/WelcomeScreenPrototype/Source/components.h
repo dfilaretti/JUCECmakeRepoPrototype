@@ -237,7 +237,7 @@ public:
         void resized() override
         {
             const auto buttonWidth = getWidth() / 4;
-            const auto buttonArea = Rectangle<int> (0, 0, buttonWidth, getHeight()
+            const auto buttonArea = Rectangle<int> (0, 0, buttonWidth, getHeight());
             back.setBounds (buttonArea);
             skip.setBounds (buttonArea.withX (buttonWidth));
             next.setBounds (buttonArea.withX (buttonWidth * 2));
