@@ -215,8 +215,6 @@ public:
             skip.onClick = ([this]() { _owner.skip(); });
 
             updateNavigationState();
-
-            startTimer (500);
         }
 
         bool isFirstPage() const { return _firstPage; }
@@ -233,6 +231,9 @@ public:
             {
                 _nextAllowed = newNextAllowed;
                 refreshView();
+
+                if (_nextAllowed)
+                    stopTimer();
             }
         }
 
@@ -243,13 +244,16 @@ public:
             _nextAllowed = _owner.currentCondition()(_owner.getContext());
 
             refreshView();
+
+            if (!_nextAllowed)
+                startTimer (500);
         }
 
     private:
 
         void timerCallback() override
         {
-            DBG ("TICK");
+            DBG ("Tick: waiting for condition to come true...");
             refreshIsNextAllowed();
         }
 
