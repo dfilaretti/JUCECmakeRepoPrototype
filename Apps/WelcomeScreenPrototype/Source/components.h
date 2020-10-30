@@ -8,9 +8,11 @@
 #include <utility>
 #include "data_structures.h"
 
+const int leftRightMargin = 27;
+
 Tutorial getDummyTutorial()
 {
-    PageContent pageContent1 {"This is a sample page. Read the following items then click next...", {"item 1", "item 2", "item 3", "..."}};
+    PageContent pageContent1 {"Loopcloud can play audio through your music software in time and in key with your track.", {"item 1", "item 2", "item 3", "..."}};
     PageContent pageContent2 {"You need to take action now!", {"select x", "select z", "... then you can click next (or skip!)"}};
     PageContent pageContent3 {"A dummy page with some action needed", {"y needs to be active!!", "blah blah blah"}};
     PageContent pageContent4 {"Hello World Page", {"foo", "bar", "baz", "wux"}};
@@ -20,7 +22,7 @@ Tutorial getDummyTutorial()
     Page page3{ pageContent3, [](Context c) { return c.y; } };
     Page page4{ pageContent4, [](Context c) { return true; } };
 
-    Lesson lesson1 {"First lesson", { page1, page2, page4 }};
+    Lesson lesson1 {"Syncing LoopCloud with your DAW", { page1, page2, page4 }};
     Lesson lesson2 {"Second lesson", { page3 }};
     Lesson lesson3 {"THE FINAL LESSON", { page2, page1, page4 }};
 
@@ -36,6 +38,8 @@ Tutorial getEmptyTutorial()
 
 class TitleView : public Component
 {
+    const int topMargin = 26;
+
 public:
     explicit TitleView (String & title, Position * pos)
         : _title{ title },
@@ -53,21 +57,25 @@ private:
     void paint (Graphics & g) override
     {
         auto area = getLocalBounds();
-        auto positionArea = area.removeFromRight(50);
+        area.removeFromLeft (leftRightMargin);
+        area.removeFromRight (leftRightMargin);
+        area.removeFromTop (topMargin);
+
+        auto positionArea = area.removeFromRight(43);
         auto titleArea = area;
 
         g.fillAll (Colours::pink);
         g.setColour (juce::Colours::darkblue);
-        g.setFont (32.0f);
 
-        g.drawText(_title, titleArea, Justification::centred, true);
+        g.setFont (Font("Montserrat", 24.0f, Font::bold));
+        g.drawText(_title, titleArea, Justification::topLeft, true);
 
         auto numLessons = _pos->nlessons;
         auto currentLesson = _pos->lesson + 1;
         auto positionString = String(currentLesson) + "/" + String(numLessons);
 
-        g.drawText(_title, titleArea, Justification::centred, true);
-        g.drawText(positionString, positionArea, Justification::centred, true);
+        g.setFont (Font("Montserrat", 21.0f, 0));
+        g.drawText(positionString, positionArea, Justification::topRight, true);
     }
 
     String _title;
@@ -76,12 +84,48 @@ private:
 
 class PageContentView : public Component
 {
+    const int pictureWidth = 245;
+    const int middleGapWidth = 16;
+    const int rigthGapWidth = 28;
+    const int itemHeight = 61;
+
 public:
-    explicit PageContentView (PageContent content) : _content{std::move( content )} {}
+
+    class PageDescriptionView : public Component
+    {
+        explicit PageDescriptionView (String  title)
+            : description (std::move(title))
+        {}
+
+        void paint (Graphics & g) override
+        {
+            g.setColour (Colours::red);
+            g.drawRect (getLocalBounds());
+        }
+
+        String description;
+    };
+
+    class BulletpointView : public Component
+    {
+        explicit BulletpointView (String  title)
+            : description (std::move(title))
+        {}
+
+        void paint (Graphics & g) override
+        {
+            g.setColour (Colours::green);
+            g.drawRect (getLocalBounds());
+        }
+
+        String description;
+    };
+
+    explicit PageContentView (PageContent content) : _content{ std::move( content ) } {}
 
     void setContent (PageContent content)
     {
-        _content = std::move(content);
+        _content = std::move (content);
         repaint();
     }
 
@@ -89,7 +133,11 @@ private:
     void paint (Graphics& g) override
     {
         auto area = getLocalBounds();
-        auto descriptionArea = area.removeFromTop(40);
+        auto pictureArea = area.removeFromLeft (pictureWidth);
+        area.removeFromLeft (middleGapWidth);
+        area.removeFromRight (rigthGapWidth);
+
+        auto descriptionArea = area.removeFromTop (itemHeight);
         auto bulletpointsArea = area;
 
         // set background & text colour
@@ -97,14 +145,14 @@ private:
         g.setColour (juce::Colours::darkblue);
 
         // description
-        g.setFont (24.0f);
+        g.setFont (Font ("Helvetica Neue Medium", 15.0f, 0));
         g.drawText(_content.getDescription(), descriptionArea, Justification::centred, true);
 
         // bulletpoints
-        g.setFont (18.0f);
+        g.setFont (Font ("Helvetica Neue Bold", 15.0f, Font::bold));
         for (auto & b : _content.getBulletpoints())
         {
-            auto bArea = bulletpointsArea.removeFromTop(30);
+            auto bArea = bulletpointsArea.removeFromTop(itemHeight);
             g.drawText(b, bArea, Justification::centred, true);
         }
     }
