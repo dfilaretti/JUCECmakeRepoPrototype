@@ -114,6 +114,9 @@ private:
 
 class PageView : public Component
 {
+    const int titleViewHeight = 91;
+    const int contentViewHeight = 245   ;
+    const int bottomGapHeight = 19;
 public:
     PageView (String title, PageContent content, Position* pos)
         : titleView{ title, pos },
@@ -124,7 +127,6 @@ public:
     }
 
     void setTitle (const String& newTitle) { titleView.setTitle (newTitle); }
-
     void setContent (const PageContent& newContent) { pageContentView.setContent (newContent); }
 
 private:
@@ -133,7 +135,8 @@ private:
     void resized() override
     {
         auto area = getLocalBounds();
-        const auto titleArea = area.removeFromTop (50);
+        const auto titleArea = area.removeFromTop (titleViewHeight);
+        const auto bottomGapArea = area.removeFromBottom (bottomGapHeight);
         titleView.setBounds (titleArea);
         pageContentView.setBounds (area);
     }
@@ -181,6 +184,7 @@ private:
 
 class TutorialView : public Component
 {
+    const int navigationViewHeight = 59;
 public:
     class NavigationView : public Component, public Timer
     {
@@ -360,7 +364,7 @@ private:
     void resized() override
     {
         auto area = getLocalBounds();
-        const auto navigationArea = area.removeFromBottom (50);
+        const auto navigationArea = area.removeFromBottom (navigationViewHeight);
         _navigationView.setBounds (navigationArea);
         _pageView.setBounds (area);
     }
@@ -383,14 +387,20 @@ private:
     PageView _pageView;
 };
 
+
 class Wrapper : public TopLevelWindow
 {
+    const int mainContentWidth = 710;
+    const int contextViewWidth = 100;
+    const int totalWidth = mainContentWidth + contextViewWidth;
+    const int height = 414;
+
 public:
     Wrapper() : TopLevelWindow ("Test", true)
     {
         setOpaque (false);
         Component::setVisible (true);
-        centreWithSize (600, 500);
+        centreWithSize (totalWidth, 414);
         addAndMakeVisible (_contextView);
         addAndMakeVisible (_tutorialView);
         setAlwaysOnTop (true);
@@ -400,7 +410,7 @@ public:
     {
         TopLevelWindow::resized();
         auto area = getLocalBounds();
-        auto contextArea = area.removeFromRight (100);
+        auto contextArea = area.removeFromRight (contextViewWidth);
         _contextView.setBounds (contextArea);
         _tutorialView.setBounds (area);
     }
