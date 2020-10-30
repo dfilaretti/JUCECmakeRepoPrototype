@@ -4,6 +4,24 @@
 
 #pragma once
 
+struct Context
+{
+    bool x = false;
+    bool y = false;
+    bool z = false;
+
+    String toString() const
+    {
+        return String ("[ x: ") +
+               std::to_string (x) +
+               String(",y: ") +
+               std::to_string (y) +
+               String(",z: ") +
+               std::to_string (z) +
+               String ("]");
+    }
+};
+
 class PageContent
 {
 public:
@@ -26,14 +44,14 @@ class Page
 {
 public:
     Page (const PageContent& content,
-          const std::function<bool()>& isCompleted)
+          const std::function<bool(Context)>& isCompleted)
         : content (content),
           isCompleted (isCompleted) {}
     const PageContent& getContent() const { return content; }
-    const std::function<bool()>& getCondition() const { return isCompleted; }
+    const std::function<bool(Context)>& getCondition() const { return isCompleted; }
 private:
     PageContent content;
-    std::function<bool()> isCompleted; // TODO: function should take SystemContext
+    std::function<bool(Context)> isCompleted; // TODO: function should take SystemContext
 };
 
 class Lesson
@@ -94,20 +112,4 @@ private:
     Position position;
 };
 
-struct Context
-{
-    bool x = false;
-    bool y = false;
-    bool z = false;
 
-    String toString() const
-    {
-        return String ("[ x: ") +
-               std::to_string (x) +
-               String(",y: ") +
-               std::to_string (y) +
-               String(",z: ") +
-               std::to_string (z) +
-               String ("]");
-    }
-};

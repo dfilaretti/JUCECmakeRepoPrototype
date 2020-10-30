@@ -15,10 +15,10 @@ Tutorial getDummyTutorial()
     PageContent pageContent3 {"A dummy page", {"item x", "item y", "item z"}};
     PageContent pageContent4 {"Hello World Page", {"foo", "bar", "baz", "wux"}};
 
-    Page page1{ pageContent1, []() { return true; } };
-    Page page2{ pageContent2, []() { return true; } };
-    Page page3{ pageContent3, []() { return false; } };
-    Page page4{ pageContent4, []() { return true; } };
+    Page page1{ pageContent1, [](Context c) { return true; } };
+    Page page2{ pageContent2, [](Context c) { return true; } };
+    Page page3{ pageContent3, [](Context c) { return false; } };
+    Page page4{ pageContent4, [](Context c) { return true; } };
 
     Lesson lesson1 {"Things you Should Know", {page1, page2, page4}};
     Lesson lesson2 {"Dummy lesson", {page3}};
@@ -213,14 +213,23 @@ public:
             next.onClick = ([this]() { _owner.next(); });
             back.onClick = ([this]() { _owner.back(); });
             skip.onClick = ([this]() { _owner.skip(); });
+
+            updateNavigationState();
         }
 
         bool isFirstPage() const { return _firstPage; }
-        void setFirstPage (bool firstPage) { _firstPage = firstPage; }
+        void setFirstPage (bool firstPage) { _firstPage = firstPage; refreshView(); }
         bool isLastPage() const { return _lastPage; }
         void setLastPage (bool lastPage) { _lastPage = lastPage; }
         bool isNextAllowed() const { return _nextAllowed; }
         void setNextAllowed (bool nextAllowed) { _nextAllowed = nextAllowed; }
+
+        void updateNavigationState()
+        {
+            _firstPage = _owner.isAtFirstPage();
+            _lastPage = _owner.isAtLastPage();
+            refreshView();
+        }
 
     private:
         void paint (Graphics& g) override { g.fillAll (Colours::yellow); }
@@ -228,12 +237,19 @@ public:
         void resized() override
         {
             const auto buttonWidth = getWidth() / 4;
-            const auto buttonArea = Rectangle<int> (0, 0, buttonWidth, getHeight());
-
+            const auto buttonArea = Rectangle<int> (0, 0, buttonWidth, getHeight()
             back.setBounds (buttonArea);
             skip.setBounds (buttonArea.withX (buttonWidth));
             next.setBounds (buttonArea.withX (buttonWidth * 2));
             finish.setBounds (buttonArea.withX (buttonWidth * 3));
+        }
+
+        void refreshView()
+        {
+            back.setVisible (!isFirstPage());
+            next.setVisible (!isLastPage());
+            skip.setVisible (!isLastPage());
+            finish.setVisible (isLastPage());
         }
 
         bool _firstPage{ false };
@@ -259,7 +275,6 @@ public:
     }
 
     void setTitle (const String& newTitle) { _pageView.setTitle (newTitle); }
-//    void setPosition (Position& newPosition) { pageView.setPosition (newPosition); }
     void setContent (const PageContent& newContent) { _pageView.setContent (newContent); }
 
     void next()
@@ -322,6 +337,14 @@ public:
     {
         setTitle (getCurrentTitle());
         setContent (currentPageContent());
+        _navigationView.updateNavigationState();
+    }
+
+    bool isAtFirstPage() { return currentLessonNumber() == 0 && currentPageNumber() == 0; }
+    bool isAtLastPage()
+    {
+        return currentLessonNumber() == nLessons() - 1 &&
+               currentPageNumber() == nPagesInCurrentLesson() - 1;
     }
 
 private:
@@ -340,10 +363,11 @@ private:
     String getCurrentTitle() { return _tutorial[currentLessonNumber()].getTitle(); }
     Page currentPage() { return _tutorial[currentLessonNumber()][currentPageNumber()]; }
     PageContent currentPageContent() { return currentPage().getContent(); }
-    std::function<bool()> currentCondition() { return currentPage().getCondition(); }
+    std::function<bool(Context)> currentCondition() { return currentPage().getCondition(); }
     int nPagesInLesson (int lesson) { return _tutorial[lesson].numberOfPages(); }
     int nPagesInCurrentLesson() { return nPagesInLesson (currentLessonNumber()); }
     int nLessons() { return _tutorial.numberOfLessons(); }
+
 
     Tutorial _tutorial;
     NavigationView _navigationView;
