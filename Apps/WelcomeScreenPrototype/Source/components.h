@@ -16,8 +16,8 @@ Tutorial getDummyTutorial()
     PageContent pageContent4 {"Hello World Page", {"foo", "bar", "baz", "wux"}};
 
     Page page1{ pageContent1, [](Context c) { return true; } };
-    Page page2{ pageContent2, [](Context c) { return true; } };
-    Page page3{ pageContent3, [](Context c) { return false; } };
+    Page page2{ pageContent2, [](Context c) { return c.x && c.z; } };
+    Page page3{ pageContent3, [](Context c) { return c.x; } };
     Page page4{ pageContent4, [](Context c) { return true; } };
 
     Lesson lesson1 {"Things you Should Know", {page1, page2, page4}};
@@ -199,7 +199,7 @@ private:
 class TutorialView : public Component
 {
 public:
-    class NavigationView : public Component
+    class NavigationView : public Component, public Timer
     {
     public:
         explicit NavigationView (TutorialView & owner)
@@ -215,6 +215,8 @@ public:
             skip.onClick = ([this]() { _owner.skip(); });
 
             updateNavigationState();
+
+            startTimer (500);
         }
 
         bool isFirstPage() const { return _firstPage; }
@@ -224,14 +226,33 @@ public:
         bool isNextAllowed() const { return _nextAllowed; }
         void setNextAllowed (bool nextAllowed) { _nextAllowed = nextAllowed; }
 
+        void refreshIsNextAllowed()
+        {
+            const auto newNextAllowed = _owner.currentCondition()(_owner.getContext());
+            if (newNextAllowed != _nextAllowed)
+            {
+                _nextAllowed = newNextAllowed;
+                refreshView();
+            }
+        }
+
         void updateNavigationState()
         {
             _firstPage = _owner.isAtFirstPage();
             _lastPage = _owner.isAtLastPage();
+            _nextAllowed = _owner.currentCondition()(_owner.getContext());
+
             refreshView();
         }
 
     private:
+
+        void timerCallback() override
+        {
+            DBG ("TICK");
+            refreshIsNextAllowed();
+        }
+
         void paint (Graphics& g) override { g.fillAll (Colours::yellow); }
 
         void resized() override
@@ -248,6 +269,7 @@ public:
         {
             back.setVisible (!isFirstPage());
             next.setVisible (!isLastPage());
+            next.setEnabled (isNextAllowed());
             skip.setVisible (!isLastPage());
             finish.setVisible (isLastPage());
         }
@@ -264,8 +286,10 @@ public:
         TutorialView & _owner;
     };
 
-    explicit TutorialView(Tutorial tutorial)
-        : _tutorial {std::move(tutorial)}, _navigationView (* this),
+    explicit TutorialView(Tutorial tutorial, Context & context)
+        : _context (context),
+          _tutorial {std::move(tutorial)},
+          _navigationView (* this),
           _pageView (getCurrentTitle(),
                     currentPageContent(),
                     &currentPosition())
@@ -347,6 +371,13 @@ public:
                currentPageNumber() == nPagesInCurrentLesson() - 1;
     }
 
+    std::function<bool(Context)> currentCondition() { return currentPage().getCondition(); }
+
+    Context & getContext()
+    {
+        return _context;
+    }
+
 private:
     void resized() override
     {
@@ -363,12 +394,11 @@ private:
     String getCurrentTitle() { return _tutorial[currentLessonNumber()].getTitle(); }
     Page currentPage() { return _tutorial[currentLessonNumber()][currentPageNumber()]; }
     PageContent currentPageContent() { return currentPage().getContent(); }
-    std::function<bool(Context)> currentCondition() { return currentPage().getCondition(); }
     int nPagesInLesson (int lesson) { return _tutorial[lesson].numberOfPages(); }
     int nPagesInCurrentLesson() { return nPagesInLesson (currentLessonNumber()); }
     int nLessons() { return _tutorial.numberOfLessons(); }
 
-
+    Context & _context;
     Tutorial _tutorial;
     NavigationView _navigationView;
     PageView _pageView;
@@ -377,9 +407,7 @@ private:
 class Wrapper : public TopLevelWindow
 {
 public:
-    Wrapper()
-        : TopLevelWindow ("Test", true),
-          _tutorialView (getDummyTutorial())
+    Wrapper() : TopLevelWindow ("Test", true)
     {
         setOpaque (false);
         Component::setVisible (true);
@@ -401,5 +429,5 @@ public:
 private:
     Context _context;
     ContextView _contextView{ _context };
-    TutorialView _tutorialView;
+    TutorialView _tutorialView{getDummyTutorial(), _context};
 };
