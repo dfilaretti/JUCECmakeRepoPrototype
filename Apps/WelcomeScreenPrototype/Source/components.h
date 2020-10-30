@@ -247,6 +247,8 @@ public:
 
             if (!_nextAllowed)
                 startTimer (500);
+            else
+                stopTimer();
         }
 
     private:
@@ -377,10 +379,7 @@ public:
 
     std::function<bool(Context)> currentCondition() { return currentPage().getCondition(); }
 
-    Context & getContext()
-    {
-        return _context;
-    }
+    Context& getContext() { return _context; }
 
 private:
     void resized() override
