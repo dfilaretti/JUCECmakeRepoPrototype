@@ -12,7 +12,7 @@ const int leftRightMargin = 27;
 
 Tutorial getDummyTutorial()
 {
-    PageContent pageContent1 {"Loopcloud can play audio through your music software in time and in key with your track.", {"item 1", "item 2", "item 3", "..."}};
+    PageContent pageContent1 {"Loopcloud can play audio through your music software in time and in key with your track.", {"item 1", "item 2"}};
     PageContent pageContent2 {"You need to take action now!", {"select x", "select z", "... then you can click next (or skip!)"}};
     PageContent pageContent3 {"A dummy page with some action needed", {"y needs to be active!!", "blah blah blah"}};
     PageContent pageContent4 {"Hello World Page", {"foo", "bar", "baz", "wux"}};
@@ -90,17 +90,31 @@ class PageContentView : public Component
     const int itemHeight = 61;
 
 public:
-
     class PageDescriptionView : public Component
     {
-        explicit PageDescriptionView (String  title)
-            : description (std::move(title))
-        {}
+    public:
+        explicit PageDescriptionView (String  description)
+            : description (std::move (description))
+        {
+        }
 
+    private:
         void paint (Graphics & g) override
         {
-            g.setColour (Colours::red);
+            g.setColour (Colours::black);
             g.drawRect (getLocalBounds());
+
+            const auto font   = Font ("Helvetica Neue Bold", 15.0f, 0);
+            const auto area   = getLocalBounds().toFloat();
+            const auto colour = Colours::black;
+
+            AttributedString s;
+            s.setWordWrap (AttributedString::WordWrap::byWord);
+            s.append (description, font, colour);
+
+            TextLayout tl;
+            tl.createLayout (s, static_cast<float> (getWidth()));
+            tl.draw (g, area);
         }
 
         String description;
@@ -108,56 +122,111 @@ public:
 
     class BulletpointView : public Component
     {
-        explicit BulletpointView (String  title)
-            : description (std::move(title))
+    public:
+        explicit BulletpointView (String text)
+            : text (std::move (text))
         {}
+
+    private:
+        void paint (Graphics & g) override
+        {
+            g.setColour (Colours::red);
+            g.drawRect (getLocalBounds());
+
+            const auto font   = Font ("Helvetica Neue Bold", 15.0f, Font::bold);
+            const auto area   = getLocalBounds().toFloat().reduced (5);
+            const auto colour = Colours::black;
+
+            AttributedString s;
+            s.setWordWrap (AttributedString::WordWrap::byWord);
+            s.append (text, font, colour);
+
+            TextLayout tl;
+            tl.createLayout (s, static_cast<float> (getWidth()));
+            tl.draw (g, area);
+        }
+
+        String text;
+    };
+
+    class ImageView : public Component
+    {
+        // TODO
 
         void paint (Graphics & g) override
         {
             g.setColour (Colours::green);
             g.drawRect (getLocalBounds());
         }
-
-        String description;
     };
 
-    explicit PageContentView (PageContent content) : _content{ std::move( content ) } {}
+    explicit PageContentView (PageContent content) : _content{ std::move( content ) }
+    {
+        initialiseWithNewContent();
+    }
+
+    void initialiseWithNewContent()
+    {
+        const auto descripion = _content.getDescription();
+        descriptionView = std::make_unique<PageDescriptionView> (descripion);
+        addAndMakeVisible (*descriptionView);
+
+        bulletpointViews.clear();
+        for (auto & b : _content.getBulletpoints())
+            bulletpointViews.emplace_back (std::make_unique<BulletpointView> (b));
+        for (auto & b : bulletpointViews)
+            addAndMakeVisible (*b);
+
+        imageView = std::make_unique<ImageView> ();
+        addAndMakeVisible (*imageView);
+
+        resized();
+    }
 
     void setContent (PageContent content)
     {
         _content = std::move (content);
-        repaint();
+        initialiseWithNewContent();
     }
 
 private:
     void paint (Graphics& g) override
     {
+        // set background & text colour
+        g.fillAll (Colours::orange);
+        g.setColour (juce::Colours::darkblue);
+    }
+
+    void resized() override
+    {
         auto area = getLocalBounds();
+
         auto pictureArea = area.removeFromLeft (pictureWidth);
         area.removeFromLeft (middleGapWidth);
         area.removeFromRight (rigthGapWidth);
 
         auto descriptionArea = area.removeFromTop (itemHeight);
+        descriptionArea.removeFromBottom (19);
+
         auto bulletpointsArea = area;
 
-        // set background & text colour
-        g.fillAll (Colours::orange);
-        g.setColour (juce::Colours::darkblue);
+        descriptionView->setBounds (descriptionArea);
 
-        // description
-        g.setFont (Font ("Helvetica Neue Medium", 15.0f, 0));
-        g.drawText(_content.getDescription(), descriptionArea, Justification::centred, true);
-
-        // bulletpoints
-        g.setFont (Font ("Helvetica Neue Bold", 15.0f, Font::bold));
-        for (auto & b : _content.getBulletpoints())
+        for (auto & b : bulletpointViews)
         {
-            auto bArea = bulletpointsArea.removeFromTop(itemHeight);
-            g.drawText(b, bArea, Justification::centred, true);
+            auto bArea = bulletpointsArea.removeFromTop (itemHeight);
+            bulletpointsArea.removeFromTop (5);
+            b->setBounds (bArea);
         }
+
+        imageView->setBounds (pictureArea);
     }
 
     PageContent _content;
+
+    std::vector<std::unique_ptr<BulletpointView>> bulletpointViews;
+    std::unique_ptr<PageDescriptionView> descriptionView;
+    std::unique_ptr<ImageView> imageView;
 };
 
 class PageView : public Component

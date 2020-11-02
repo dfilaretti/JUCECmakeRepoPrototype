@@ -34,6 +34,8 @@ public:
 
     const String& getDescription() const { return description; }
     const std::vector<String>& getBulletpoints() const { return bulletpoints; }
+    int getNumberOfBulletpoints() const { return bulletpoints.size(); }
+    String bulletpoint (int n) const { return bulletpoints[n]; }
 
 private:
     String description;
