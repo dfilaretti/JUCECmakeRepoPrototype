@@ -43,7 +43,7 @@ Tutorial getDummyTutorial()
 
     PageContent pageContent4
         {
-            "Loopcloud will automatically transpose sounds so that they’re in the same key as your track.",
+            "Loopcloud will automatically transpose sounds so that they're in the same key as your track.",
             {
                 "Use select a key from the highlighted menu."
             }
@@ -79,19 +79,19 @@ Tutorial getDummyTutorial()
             {
                 "Purchase sounds from the store with points.",
                 "Narrow down your search by selecting a BPM, or other tags.",
-                "Or visit our support sidebar and find out more about Loopcloud’s exciting features."
+                "Or visit our support sidebar and find out more about Loopcloud's exciting features."
             }
         };
 
 
-    Page page1{ pageContent1, [](Context c) { return true; } };
+    Page page1{ pageContent1, [](Context /*c*/) { return true; } };
     Page page2{ pageContent2, [](Context c) { return c.x && c.z; } };
     Page page3{ pageContent3, [](Context c) { return c.y; } };
-    Page page4{ pageContent4, [](Context c) { return true; } };
-    Page page5{ pageContent5, [](Context c) { return true; } };
-    Page page6{ pageContent6, [](Context c) { return true; } };
-    Page page7{ pageContent7, [](Context c) { return true; } };
-    Page page8{ pageContent8, [](Context c) { return true; } };
+    Page page4{ pageContent4, [](Context /*c*/) { return true; } };
+    Page page5{ pageContent5, [](Context /*c*/) { return true; } };
+    Page page6{ pageContent6, [](Context /*c*/) { return true; } };
+    Page page7{ pageContent7, [](Context /*c*/) { return true; } };
+    Page page8{ pageContent8, [](Context /*c*/) { return true; } };
 
     Lesson lesson1 {"Syncing LoopCloud with your DAW", { page1 }};
     Lesson lesson2 {"Add Your Existing Samples", { page2, page3 }};
@@ -114,15 +114,14 @@ class TitleView : public Component
     const int topMargin = 26;
 
 public:
-    explicit TitleView (String & title, Position * pos)
-        : _title{ title },
-          _pos{ pos } {}
+    explicit TitleView (String & title, Position * position)
+        : m_title{ title }, m_position{ position } {}
 
-    String getTitle() { return _title; }
+    String getTitle() { return m_title; }
 
-    void setTitle (const String& title)
+    void setTitle (const String& newTitle)
     {
-        _title = title;
+        m_title = newTitle;
         repaint();
     }
 
@@ -141,18 +140,18 @@ private:
         g.setColour (juce::Colours::darkblue);
 
         g.setFont (Font("Montserrat", 24.0f, Font::bold));
-        g.drawText(_title, titleArea, Justification::topLeft, true);
+        g.drawText(m_title, titleArea, Justification::topLeft, true);
 
-        auto numLessons = _pos->nlessons;
-        auto currentLesson = _pos->lesson + 1;
+        auto numLessons = m_position->nlessons;
+        auto currentLesson = m_position->lesson + 1;
         auto positionString = String(currentLesson) + "/" + String(numLessons);
 
         g.setFont (Font("Montserrat", 21.0f, 0));
         g.drawText(positionString, positionArea, Justification::topRight, true);
     }
 
-    String _title;
-    Position * _pos;
+    String m_title;
+    Position * m_position;
 };
 
 class PageContentView : public Component
@@ -163,11 +162,11 @@ class PageContentView : public Component
     const int itemHeight = 61;
 
 public:
-    class PageDescriptionView : public Component
+    class TopParagraphView : public Component
     {
     public:
-        explicit PageDescriptionView (String  description)
-            : description (std::move (description))
+        explicit TopParagraphView (String  description)
+            : m_description (std::move (description))
         {
         }
 
@@ -180,21 +179,22 @@ public:
 
             AttributedString s;
             s.setWordWrap (AttributedString::WordWrap::byWord);
-            s.append (description, font, colour);
+            s.append (m_description, font, colour);
 
             TextLayout tl;
             tl.createLayout (s, static_cast<float> (getWidth()));
             tl.draw (g, area);
         }
 
-        String description;
+        String m_description;
     };
 
-    class BulletpointView : public Component
+    // TODO: derived classes: LinkItemView, CommandItemView etc...
+    class ItemView : public Component
     {
     public:
-        explicit BulletpointView (String text)
-            : text (std::move (text))
+        explicit ItemView (String text)
+            : m_text (std::move (text))
         {}
 
     private:
@@ -209,14 +209,14 @@ public:
 
             AttributedString s;
             s.setWordWrap (AttributedString::WordWrap::byWord);
-            s.append (text, font, colour);
+            s.append (m_text, font, colour);
 
             TextLayout tl;
             tl.createLayout (s, static_cast<float> (getWidth()));
             tl.draw (g, area);
         }
 
-        String text;
+        String m_text;
     };
 
     class ImageView : public Component
@@ -232,41 +232,38 @@ public:
         }
     };
 
-    explicit PageContentView (PageContent content) : _content{ std::move( content ) }
+    explicit PageContentView (PageContent content) : m_content{ std::move( content ) }
     {
         initialiseWithNewContent();
     }
 
     void initialiseWithNewContent()
     {
-        const auto descripion = _content.getDescription();
-        descriptionView = std::make_unique<PageDescriptionView> (descripion);
-        addAndMakeVisible (*descriptionView);
+        const auto descripion = m_content.getDescription();
+        m_topParagraphView = std::make_unique<TopParagraphView> (descripion);
+        addAndMakeVisible (*m_topParagraphView);
 
-        bulletpointViews.clear();
-        for (auto & b : _content.getBulletpoints())
-            bulletpointViews.emplace_back (std::make_unique<BulletpointView> (b));
-        for (auto & b : bulletpointViews)
+        m_itemViews.clear();
+        for (auto & b : m_content.getBulletpoints())
+            m_itemViews.emplace_back (std::make_unique<ItemView> (b));
+        for (auto & b : m_itemViews)
             addAndMakeVisible (*b);
 
-        imageView = std::make_unique<ImageView> ();
-        addAndMakeVisible (*imageView);
+        m_imageView = std::make_unique<ImageView> ();
+        addAndMakeVisible (*m_imageView);
 
         resized();
     }
 
-    void setContent (PageContent content)
+    void setContent (PageContent newContent)
     {
-        _content = std::move (content);
+        m_content = std::move(newContent);
         initialiseWithNewContent();
     }
 
 private:
-    void paint (Graphics& g) override
+    void paint (Graphics& /*g*/) override
     {
-        // set background & text colour
-        //g.fillAll (Colours::orange);
-        g.setColour (juce::Colours::darkblue);
     }
 
     void resized() override
@@ -277,34 +274,33 @@ private:
         area.removeFromLeft (middleGapWidth);
         area.removeFromRight (rigthGapWidth);
 
-        auto descriptionArea = area.removeFromTop (itemHeight);
-        descriptionArea.removeFromBottom (19);
+        auto topParagraphArea = area.removeFromTop (itemHeight);
+        topParagraphArea.removeFromBottom (19);
 
-        auto bulletpointsArea = area;
+        auto itemsArea = area;
 
-        descriptionView->setBounds (descriptionArea);
+        m_topParagraphView->setBounds (topParagraphArea);
 
-        for (auto & b : bulletpointViews)
+        for (auto & itemView : m_itemViews)
         {
-            auto bArea = bulletpointsArea.removeFromTop (itemHeight);
-            bulletpointsArea.removeFromTop (5);
-            b->setBounds (bArea);
+            auto bArea = itemsArea.removeFromTop (itemHeight);
+            itemsArea.removeFromTop (5);
+            itemView->setBounds (bArea);
         }
 
-        imageView->setBounds (pictureArea);
+        m_imageView->setBounds (pictureArea);
     }
 
-    PageContent _content;
+    PageContent m_content;
 
-    std::vector<std::unique_ptr<BulletpointView>> bulletpointViews;
-    std::unique_ptr<PageDescriptionView> descriptionView;
-    std::unique_ptr<ImageView> imageView;
+    std::vector<std::unique_ptr<ItemView>> m_itemViews;
+    std::unique_ptr<TopParagraphView> m_topParagraphView;
+    std::unique_ptr<ImageView> m_imageView;
 };
 
 class PageView : public Component
 {
     const int titleViewHeight = 91;
-    const int contentViewHeight = 245   ;
     const int bottomGapHeight = 19;
 public:
     PageView (String title, PageContent content, Position* pos)
@@ -325,7 +321,7 @@ private:
     {
         auto area = getLocalBounds();
         const auto titleArea = area.removeFromTop (titleViewHeight);
-        const auto bottomGapArea = area.removeFromBottom (bottomGapHeight);
+        area.removeFromBottom (bottomGapHeight);
         titleView.setBounds (titleArea);
         pageContentView.setBounds (area);
     }
@@ -337,15 +333,15 @@ private:
 class ContextView : public Component
 {
 public:
-    explicit ContextView (Context & context) : context (context)
+    explicit ContextView (Context & context) : m_context (context)
     {
-        addAndMakeVisible (xToggleButton);
-        addAndMakeVisible (yToggleButton);
-        addAndMakeVisible (zToggleButton);
+        addAndMakeVisible (m_xToggleButton);
+        addAndMakeVisible (m_yToggleButton);
+        addAndMakeVisible (m_zToggleButton);
 
-        xToggleButton.onClick = [this]() { this->context.x = xToggleButton.getToggleState(); };
-        yToggleButton.onClick = [this]() { this->context.y = yToggleButton.getToggleState(); };
-        zToggleButton.onClick = [this]() { this->context.z = zToggleButton.getToggleState(); };
+        m_xToggleButton.onClick = [this]() { this->m_context.x = m_xToggleButton.getToggleState(); };
+        m_yToggleButton.onClick = [this]() { this->m_context.y = m_yToggleButton.getToggleState(); };
+        m_zToggleButton.onClick = [this]() { this->m_context.z = m_zToggleButton.getToggleState(); };
     }
 private:
     void paint (Graphics& g) override { g.fillAll (Colours::black); }
@@ -355,20 +351,20 @@ private:
         auto area = getLocalBounds();
 
         auto xArea = area.removeFromTop(50);
-        xToggleButton.setBounds(xArea);
+        m_xToggleButton.setBounds(xArea);
 
         auto yArea = area.removeFromTop(50);
-        yToggleButton.setBounds(yArea);
+        m_yToggleButton.setBounds(yArea);
 
         auto zArea = area.removeFromTop(50);
-        zToggleButton.setBounds(zArea);
+        m_zToggleButton.setBounds(zArea);
     }
 
-    Context & context;
+    Context & m_context;
 
-    ToggleButton xToggleButton{ "x" };
-    ToggleButton yToggleButton{ "y" };
-    ToggleButton zToggleButton{ "z" };
+    ToggleButton m_xToggleButton{ "x" };
+    ToggleButton m_yToggleButton{ "y" };
+    ToggleButton m_zToggleButton{ "z" };
 };
 
 class TutorialView : public Component
@@ -378,49 +374,52 @@ public:
     class NavigationView : public Component, public Timer
     {
     public:
-        explicit NavigationView (TutorialView & owner) : _owner (owner)
+        explicit NavigationView (TutorialView & owner) : m_owner (owner)
         {
-            addAndMakeVisible (back);
-            addAndMakeVisible (next);
-            addAndMakeVisible (skip);
-            addAndMakeVisible (finish);
+            addAndMakeVisible (m_back);
+            addAndMakeVisible (m_next);
+            addAndMakeVisible (m_skip);
+            addAndMakeVisible (m_finish);
 
-            next.onClick = ([this]() { _owner.next(); });
-            back.onClick = ([this]() { _owner.back(); });
-            skip.onClick = ([this]() { _owner.skip(); });
+            m_next.onClick = ([this]() { this->m_owner.next(); });
+            m_back.onClick = ([this]() { this->m_owner.back(); });
+            m_skip.onClick = ([this]() { this->m_owner.skip(); });
 
             updateNavigationState();
         }
 
-        bool isFirstPage() const { return _firstPage; }
-        void setFirstPage (bool firstPage) { _firstPage = firstPage; refreshView(); }
-        bool isLastPage() const { return _lastPage; }
-        void setLastPage (bool lastPage) { _lastPage = lastPage; }
-        bool isNextAllowed() const { return _nextAllowed; }
-        void setNextAllowed (bool nextAllowed) { _nextAllowed = nextAllowed; }
+        bool isFirstPage() const { return m_firstPage; }
+        void setFirstPage (bool isNowFirstPage) {
+            m_firstPage = isNowFirstPage; refreshView(); }
+
+        bool isLastPage() const { return m_lastPage; }
+        void setLastPage (bool isNowLastPage) { m_lastPage = isNowLastPage; }
+
+        bool isNextAllowed() const { return m_nextAllowed; }
+        void setNextAllowed (bool sholdNextBeAllowed) { m_nextAllowed = sholdNextBeAllowed; }
 
         void refreshIsNextAllowed()
         {
-            const auto newNextAllowed = _owner.currentCondition()(_owner.getContext());
-            if (newNextAllowed != _nextAllowed)
+            const auto newNextAllowed = m_owner.currentCondition()(m_owner.getContext());
+            if (newNextAllowed != m_nextAllowed)
             {
-                _nextAllowed = newNextAllowed;
+                m_nextAllowed = newNextAllowed;
                 refreshView();
 
-                if (_nextAllowed)
+                if (m_nextAllowed)
                     stopTimer();
             }
         }
 
         void updateNavigationState()
         {
-            _firstPage = _owner.isAtFirstPage();
-            _lastPage = _owner.isAtLastPage();
-            _nextAllowed = _owner.currentCondition()(_owner.getContext());
+            m_firstPage = m_owner.isAtFirstPage();
+            m_lastPage = m_owner.isAtLastPage();
+            m_nextAllowed = m_owner.currentCondition()(m_owner.getContext());
 
             refreshView();
 
-            if (!_nextAllowed)
+            if (! m_nextAllowed)
                 startTimer (500);
             else
                 stopTimer();
@@ -455,46 +454,43 @@ public:
             const auto nextButtonPos = buttonArea.withPosition (topRight.withX (topRight.getX() - buttonWidth));
             const auto skipButtonPos = buttonArea.withPosition (topRight.withX(topRight.getX() - buttonWidth * 2));
 
-            back.setBounds (backButtonPos);
-            next.setBounds (nextButtonPos);
-            skip.setBounds (skipButtonPos);
-            finish.setBounds (nextButtonPos);
+            m_back.setBounds (backButtonPos);
+            m_next.setBounds (nextButtonPos);
+            m_skip.setBounds (skipButtonPos);
+            m_finish.setBounds (nextButtonPos);
         }
 
         void refreshView()
         {
-            back.setVisible (!isFirstPage());
-            next.setVisible (!isLastPage());
-            next.setEnabled (isNextAllowed());
-            skip.setVisible (!isLastPage());
-            finish.setVisible (isLastPage());
+            m_back.setVisible (!isFirstPage());
+            m_next.setVisible (!isLastPage());
+            m_next.setEnabled (isNextAllowed());
+            m_skip.setVisible (!isLastPage());
+            m_finish.setVisible (isLastPage());
         }
 
-        bool _firstPage{ false };
-        bool _lastPage{ false };
-        bool _nextAllowed{ false };
+        bool m_firstPage{ false };
+        bool m_lastPage{ false };
+        bool m_nextAllowed{ false };
 
-        TextButton back{ "back" };
-        TextButton next{ "next" };
-        TextButton skip{ "skip" };
-        TextButton finish{ "finish" };
+        TextButton m_back{ "back" };
+        TextButton m_next{ "next" };
+        TextButton m_skip{ "skip" };
+        TextButton m_finish{ "finish" };
 
-        TutorialView & _owner;
+        TutorialView & m_owner;
     };
 
     explicit TutorialView (Tutorial tutorial, Context & context)
-        : _context (context),
-          _tutorial {std::move(tutorial)},
-          _navigationView (*this),
-          _pageView (getCurrentTitle(), currentPageContent(), &currentPosition())
+        : m_context (context), m_tutorial{std::move(tutorial)}, m_navigationView (*this), m_pageView (getCurrentTitle(), currentPageContent(), &currentPosition())
     {
-        addAndMakeVisible (_navigationView);
-        addAndMakeVisible (_pageView);
+        addAndMakeVisible (m_navigationView);
+        addAndMakeVisible (m_pageView);
     }
 
-    void setTitle (const String& newTitle) { _pageView.setTitle (newTitle); }
-    void setContent (const PageContent& newContent) { _pageView.setContent (newContent); }
-    void refreshNavigation() { _navigationView.updateNavigationState(); }
+    void setTitle (const String& newTitle) { m_pageView.setTitle (newTitle); }
+    void setContent (const PageContent& newContent) { m_pageView.setContent (newContent); }
+    void refreshNavigation() { m_navigationView.updateNavigationState(); }
 
     void next()
     {
@@ -504,7 +500,9 @@ public:
         auto maxLesson = nLessons() - 1;
 
         if (currentPage < maxPage)
+        {
             currentPosition().setNextPage();
+        }
         else
             if (currentLesson < maxLesson)
             {
@@ -512,7 +510,9 @@ public:
                 currentPosition().setFirstPage();
             }
             else
+            {
                 DBG ("NEXT: reached end of last lesson");
+            }
 
         refreshContent();
     }
@@ -523,7 +523,9 @@ public:
         auto currentPage = currentPageNumber();
 
         if (currentPage > 0)
+        {
             currentPosition().setPreviousPage();
+        }
         else
             if (currentLesson > 0)
             {
@@ -531,7 +533,9 @@ public:
                 currentPosition().setPage(nPagesInCurrentLesson() - 1);
             }
             else
+            {
                 DBG ("NEXT: reached beginning of first lesson");
+            }
 
         refreshContent();
     }
@@ -547,7 +551,9 @@ public:
             currentPosition().setFirstPage();
         }
         else
+        {
             DBG ("SKIP: already in last lesson!!");
+        }
 
         refreshContent();
     }
@@ -562,33 +568,32 @@ public:
     bool isAtFirstPage() { return currentLessonNumber() == 0 && currentPageNumber() == 0; }
     bool isAtLastPage() { return currentLessonNumber() == nLessons() - 1 && currentPageNumber() == nPagesInCurrentLesson() - 1; }
     std::function<bool(Context)> currentCondition() { return currentPage().getCondition(); }
-    Context& getContext() { return _context; }
+    Context& getContext() { return m_context; }
 
 private:
     void resized() override
     {
         auto area = getLocalBounds();
         const auto navigationArea = area.removeFromBottom (navigationViewHeight);
-        _navigationView.setBounds (navigationArea);
-        _pageView.setBounds (area);
+        m_navigationView.setBounds (navigationArea);
+        m_pageView.setBounds (area);
     }
 
-    // getters
-    Position& currentPosition() { return _tutorial.getPosition(); }
-    int currentLessonNumber() { return currentPosition().lesson; }
-    int currentPageNumber() { return currentPosition().page; }
-    String getCurrentTitle() { return _tutorial[currentLessonNumber()].getTitle(); }
-    Page currentPage() { return _tutorial[currentLessonNumber()][currentPageNumber()]; }
+    Position& currentPosition() { return m_tutorial.getPosition(); }
+    std::size_t currentLessonNumber() { return currentPosition().lesson; }
+    std::size_t currentPageNumber() { return currentPosition().page; }
+    String getCurrentTitle() { return m_tutorial[currentLessonNumber()].getTitle(); }
+    Page currentPage() { return m_tutorial[currentLessonNumber()][currentPageNumber()]; }
     PageContent currentPageContent() { return currentPage().getContent(); }
-    int nPagesInLesson (int lesson) { return _tutorial[lesson].numberOfPages(); }
-    int nPagesInCurrentLesson() { return nPagesInLesson (currentLessonNumber()); }
-    int nLessons() { return _tutorial.numberOfLessons(); }
+    std::size_t nPagesInLesson (std::size_t lesson) { return m_tutorial[lesson].numberOfPages(); }
+    std::size_t nPagesInCurrentLesson() { return nPagesInLesson (currentLessonNumber()); }
+    std::size_t nLessons() { return m_tutorial.numberOfLessons(); }
 
-    Context & _context;
-    Tutorial _tutorial;
+    Context & m_context;
+    Tutorial m_tutorial;
 
-    NavigationView _navigationView;
-    PageView _pageView;
+    NavigationView m_navigationView;
+    PageView m_pageView;
 };
 
 
@@ -604,9 +609,9 @@ public:
     {
         setOpaque (false);
         Component::setVisible (true);
-        centreWithSize (totalWidth, 414);
-        addAndMakeVisible (_contextView);
-        addAndMakeVisible (_tutorialView);
+        centreWithSize (totalWidth, height);
+        addAndMakeVisible (m_contextView);
+        addAndMakeVisible (m_tutorialView);
         setAlwaysOnTop (true);
     }
 
@@ -615,12 +620,12 @@ public:
         TopLevelWindow::resized();
         auto area = getLocalBounds();
         auto contextArea = area.removeFromRight (contextViewWidth);
-        _contextView.setBounds (contextArea);
-        _tutorialView.setBounds (area);
+        m_contextView.setBounds (contextArea);
+        m_tutorialView.setBounds (area);
     }
 
 private:
-    Context _context;
-    ContextView _contextView{ _context };
-    TutorialView _tutorialView{getDummyTutorial(), _context};
+    Context m_context;
+    ContextView m_contextView{ m_context };
+    TutorialView m_tutorialView{getDummyTutorial(), m_context };
 };
