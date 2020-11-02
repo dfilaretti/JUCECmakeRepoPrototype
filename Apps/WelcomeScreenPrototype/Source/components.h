@@ -366,12 +366,27 @@ public:
 
         void resized() override
         {
-            const auto buttonWidth = getWidth() / 4;
-            const auto buttonArea = Rectangle<int> (0, 0, buttonWidth, getHeight());
-            back.setBounds (buttonArea);
-            skip.setBounds (buttonArea.withX (buttonWidth));
-            next.setBounds (buttonArea.withX (buttonWidth * 2));
-            finish.setBounds (buttonArea.withX (buttonWidth * 3));
+            const auto buttonWidth = 75;
+            const auto buttonHeight = 31;
+            const auto buttonArea = Rectangle<int> (0, 0, buttonWidth, buttonHeight);
+
+            auto area = getLocalBounds();
+            area.removeFromTop (13);
+            area.removeFromBottom (15);
+            area.removeFromLeft (27);
+            area.removeFromRight (27);
+
+            const auto topLeft = area.getTopLeft();
+            const auto topRight = area.getTopRight();
+
+            const auto backButtonPos = buttonArea.withPosition (topLeft);
+            const auto nextButtonPos = buttonArea.withPosition (topRight.withX (topRight.getX() - buttonWidth));
+            const auto skipButtonPos = buttonArea.withPosition (topRight.withX(topRight.getX() - buttonWidth * 2));
+
+            back.setBounds (backButtonPos);
+            next.setBounds (nextButtonPos);
+            skip.setBounds (skipButtonPos);
+            finish.setBounds (nextButtonPos);
         }
 
         void refreshView()
