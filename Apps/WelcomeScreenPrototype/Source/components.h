@@ -9,24 +9,97 @@
 #include "data_structures.h"
 
 const int leftRightMargin = 27;
+const Colour lightGrey = Colours::lightgrey;
+const Colour darkGrey = Colours::darkgrey;
+const Colour bulletColour = Colours::grey;
 
 Tutorial getDummyTutorial()
 {
-    PageContent pageContent1 {"Loopcloud can play audio through your music software in time and in key with your track.", {"item 1", "item 2"}};
-    PageContent pageContent2 {"You need to take action now!", {"select x", "select z", "... then you can click next (or skip!)"}};
-    PageContent pageContent3 {"A dummy page with some action needed", {"y needs to be active!!", "blah blah blah"}};
-    PageContent pageContent4 {"Hello World Page", {"foo", "bar", "baz", "wux"}};
+    PageContent pageContent1
+        {
+            "Loopcloud can play audio through your music software in time and in key with your track.",
+            {
+                "Find the Loopcloud plugin in your DAW and insert it onto an instrument track.",
+                "See a tutorial for Ableton, Logic Pro X,  GarageBand, FL Studio, Cubase)."
+            }
+        };
+
+    PageContent pageContent2
+        {
+            "Analyse and auto-tag your existing sample library.",
+            {
+                "Add your first folder by clicking the Add Samples button"
+            }
+        };
+
+    PageContent pageContent3
+        {
+            "The folder has been added to Loopcloud!",
+            {
+                "Loopcloud will automatically keep up to date with changes to these folders.",
+                "You can add more folders later from the library tab."
+            }
+        };
+
+    PageContent pageContent4
+        {
+            "Loopcloud will automatically transpose sounds so that they’re in the same key as your track.",
+            {
+                "Use select a key from the highlighted menu."
+            }
+        };
+
+    PageContent pageContent5
+        {
+            "Sounds are tagged in Loopcloud to make them easy for you to search",
+            {
+                "Select a Genre tag to make your first search."
+            }
+        };
+
+    PageContent pageContent6
+        {
+            "Select a sound, and press play in your DAW.",
+            {
+                "The sound will play though your instrument channel."
+            }
+        };
+
+    PageContent pageContent7
+        {
+            "Now you can select a sound to listen to, edit it, apply effects and export it to your DAW.",
+            {
+
+            }
+        };
+
+    PageContent pageContent8
+        {
+            "Now you can select a file to listen to, edit it, apply effects and export it to your DAW.",
+            {
+                "Purchase sounds from the store with points.",
+                "Narrow down your search by selecting a BPM, or other tags.",
+                "Or visit our support sidebar and find out more about Loopcloud’s exciting features."
+            }
+        };
+
 
     Page page1{ pageContent1, [](Context c) { return true; } };
     Page page2{ pageContent2, [](Context c) { return c.x && c.z; } };
     Page page3{ pageContent3, [](Context c) { return c.y; } };
     Page page4{ pageContent4, [](Context c) { return true; } };
+    Page page5{ pageContent5, [](Context c) { return true; } };
+    Page page6{ pageContent6, [](Context c) { return true; } };
+    Page page7{ pageContent7, [](Context c) { return true; } };
+    Page page8{ pageContent8, [](Context c) { return true; } };
 
-    Lesson lesson1 {"Syncing LoopCloud with your DAW", { page1, page2, page4 }};
-    Lesson lesson2 {"Second lesson", { page3 }};
-    Lesson lesson3 {"THE FINAL LESSON", { page2, page1, page4 }};
+    Lesson lesson1 {"Syncing LoopCloud with your DAW", { page1 }};
+    Lesson lesson2 {"Add Your Existing Samples", { page2, page3 }};
+    Lesson lesson3 {"Setup Auto Key", { page4 }};
+    Lesson lesson4 {"Make Your First Search", { page5, page6, page7 }};
+    Lesson lesson5 {"Time to Explore", { page8 }};
 
-    Tutorial tut {{lesson1, lesson2, lesson3}};
+    Tutorial tut {{lesson1, lesson2, lesson3, lesson4, lesson5}};
 
     return tut;
 }
@@ -64,7 +137,7 @@ private:
         auto positionArea = area.removeFromRight(43);
         auto titleArea = area;
 
-        g.fillAll (Colours::pink);
+        //g.fillAll (Colours::pink);
         g.setColour (juce::Colours::darkblue);
 
         g.setFont (Font("Montserrat", 24.0f, Font::bold));
@@ -101,9 +174,6 @@ public:
     private:
         void paint (Graphics & g) override
         {
-            g.setColour (Colours::black);
-            g.drawRect (getLocalBounds());
-
             const auto font   = Font ("Helvetica Neue Bold", 15.0f, 0);
             const auto area   = getLocalBounds().toFloat();
             const auto colour = Colours::black;
@@ -130,8 +200,8 @@ public:
     private:
         void paint (Graphics & g) override
         {
-            g.setColour (Colours::red);
-            g.drawRect (getLocalBounds());
+            g.setColour (bulletColour);
+            g.fillRoundedRectangle (getLocalBounds().toFloat(), 10);
 
             const auto font   = Font ("Helvetica Neue Bold", 15.0f, Font::bold);
             const auto area   = getLocalBounds().toFloat().reduced (5);
@@ -157,6 +227,8 @@ public:
         {
             g.setColour (Colours::green);
             g.drawRect (getLocalBounds());
+
+            g.drawText("Image Here!", getLocalBounds(), Justification::centred, true);
         }
     };
 
@@ -193,7 +265,7 @@ private:
     void paint (Graphics& g) override
     {
         // set background & text colour
-        g.fillAll (Colours::orange);
+        //g.fillAll (Colours::orange);
         g.setColour (juce::Colours::darkblue);
     }
 
@@ -247,7 +319,7 @@ public:
     void setContent (const PageContent& newContent) { pageContentView.setContent (newContent); }
 
 private:
-    void paint (Graphics& g) override { g.fillAll (Colours::green); }
+    void paint (Graphics& g) override { g.fillAll (lightGrey); }
 
     void resized() override
     {
@@ -362,7 +434,7 @@ public:
             refreshIsNextAllowed();
         }
 
-        void paint (Graphics& g) override { g.fillAll (Colours::white); }
+        void paint (Graphics& g) override { g.fillAll (darkGrey); }
 
         void resized() override
         {
